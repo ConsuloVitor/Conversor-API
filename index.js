@@ -2,13 +2,17 @@ const apiKey = '54ec18c9e428c4ad3763aea1';
 const apiURL = `https://v6.exchangerate-api.com/v6/${apiKey}/latest/`; 
 
 // Função para consulta à taxa de câmbio via API
-async function getExchangeRate(daMoeda, paraMoeda){
-    try{
+async function getExchangeRate(daMoeda, paraMoeda) {
+    try {
         const response = await fetch(`${apiURL}${daMoeda}`);
-        const data = await response.json(); // Aqui foi adicionado 'await'
-        
-        if(data.result === "success"){
-            return data.conversion_rates[paraMoeda]; // Corrigido para 'conversion_rates'
+        if (!response.ok) {
+            throw new Error('Erro na resposta da API');
+        }
+
+        const data = await response.json();
+
+        if (data.result === 'success' && data.conversion_rates) {
+            return data.conversion_rates[paraMoeda];
         } else {
             throw new Error('Erro ao buscar taxa de câmbio');
         }
@@ -19,22 +23,30 @@ async function getExchangeRate(daMoeda, paraMoeda){
 }
 
 // Manipulador de evento para o formulário de conversão de moedas
-document.getElementById('currency-converter').addEventListener('submit', async function(event){
+document.getElementById('currency-converter').addEventListener('submit', async function (event) {
     event.preventDefault();
-    
-    // Obter valores de entradas
+
     const valor = parseFloat(document.getElementById('amount').value);
     const daMoeda = document.getElementById('daMoeda').value;
     const paraMoeda = document.getElementById('paraMoeda').value;
-    
+
+    if (isNaN(valor) || valor <= 0) {
+        alert('Por favor, insira um valor válido.');
+        return;
+    }
+
     const exchangeRate = await getExchangeRate(daMoeda, paraMoeda);
-    
-    if(exchangeRate){
+
+    if (exchangeRate) {
         const converteValue = valor * exchangeRate;
-        const conversao = document.getElementById('conversao');
+        const result = document.getElementById('result'); // Alterado de 'conversao' para 'result'
         
-        // Atualizar o conteúdo da conversão
-        conversao.textContent = `Resultado: ${converteValue.toFixed(2)} ${paraMoeda}`;
+        // Verifica se o elemento 'result' existe antes de tentar modificar o texto
+        if (result) {
+            result.textContent = `Resultado: ${converteValue.toFixed(2)} ${paraMoeda}`;
+        } else {
+            console.error('Elemento #result não encontrado');
+        }
     } else {
         alert('Erro ao buscar a cotação. Tente novamente.');
     }
